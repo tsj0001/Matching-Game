@@ -8,7 +8,7 @@ class MatchingGameApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Matching Game: Die Rolls vs Positions")
-        self.root.geometry("980x520")
+        self.root.geometry("980x700")
         self.root.resizable(False, False)
 
         self.total_trials = 0
@@ -71,12 +71,18 @@ class MatchingGameApp:
         ttk.Label(stats, textvariable=self.rate_var, font=("Georgia", 11)).grid(row=2, column=0, sticky="e")
         ttk.Label(stats, textvariable=self.theory_var, font=("Georgia", 11)).grid(row=3, column=0, sticky="e")
 
+        self.graph_canvas = tk.Canvas(self.main, width=920, height=170, bg="#f6f2ea", highlightthickness=0)
+        self.graph_canvas.grid(row=3, column=0, columnspan=3, sticky="nsew", pady=(16, 0))
+        self.graph_rect = (70, 20, 870, 140)
+
         self.die_boxes = []
         self.auto_running = False
         self.auto_after_id = None
         self.recent_results = []
         self.hist_window = 50
+        self.rate_history = []
         self._draw_static_layout()
+        self._draw_graph()
 
     def _draw_static_layout(self):
         self.canvas.delete("all")
@@ -124,6 +130,59 @@ class MatchingGameApp:
             tags="bulb",
         )
         self.canvas.create_text(x, y + 58, text="Result", font=("Georgia", 11, "italic"), fill="#6b5b4b", tags="bulb")
+
+    def _draw_graph(self):
+        self.graph_canvas.delete("graph")
+        x0, y0, x1, y1 = self.graph_rect
+        axis_color = "#6f5f4f"
+        line_color = "#0093e6"
+
+        self.graph_canvas.create_line(x0, y0, x0, y1, fill=axis_color, width=2, tags="graph")
+        self.graph_canvas.create_line(x0, y1, x1, y1, fill=axis_color, width=2, tags="graph")
+        self.graph_canvas.create_text(x0 - 18, y0 - 6, text="freq/n", font=("Georgia", 10), fill=axis_color, tags="graph")
+        self.graph_canvas.create_text(x1 + 10, y1 + 2, text="n", font=("Georgia", 10, "italic"), fill=axis_color, tags="graph")
+
+        y_min = 0.4
+        y_max = 1.0
+        for value in (0.4, 0.6, 0.8, 1.0):
+            y = y1 - ((value - y_min) / (y_max - y_min)) * (y1 - y0)
+            self.graph_canvas.create_line(x0 - 6, y, x0, y, fill=axis_color, width=1, tags="graph")
+            self.graph_canvas.create_text(x0 - 26, y, text=f"{value:.1f}", font=("Georgia", 9), fill=axis_color, tags="graph")
+
+        n = len(self.rate_history)
+        if n <= 1:
+            tick_max = 1
+        else:
+            tick_max = n
+        for t in range(5):
+            value = int(round(t * tick_max / 4))
+            x = x0 + (t / 4) * (x1 - x0)
+            self.graph_canvas.create_line(x, y1, x, y1 + 6, fill=axis_color, width=1, tags="graph")
+            self.graph_canvas.create_text(x, y1 + 16, text=str(value), font=("Georgia", 9), fill=axis_color, tags="graph")
+
+        if not self.rate_history:
+            return
+
+        points = []
+        denom = max(1, n - 1)
+        for i, rate in enumerate(self.rate_history):
+            x = x0 + (i / denom) * (x1 - x0)
+            clamped = min(max(rate, y_min), y_max)
+            y = y1 - ((clamped - y_min) / (y_max - y_min)) * (y1 - y0)
+            points.extend([x, y])
+
+        if n == 1:
+            self.graph_canvas.create_oval(
+                points[0] - 2,
+                points[1] - 2,
+                points[0] + 2,
+                points[1] + 2,
+                fill=line_color,
+                outline="",
+                tags="graph",
+            )
+        else:
+            self.graph_canvas.create_line(*points, fill=line_color, width=2, tags="graph")
 
     """ def _draw_histogram(self):
         self.canvas.delete("hist")
@@ -228,10 +287,8 @@ class MatchingGameApp:
 
     def _finish_trial(self, animated=False):
         success = self._current_matches > 0
-        self._record_result(self._current_matches)
-        self.total_trials += 1
+        self._apply_trial_outcome(self._current_matches)
         if success:
-            self.total_successes += 1
             self.status_var.set("Success! At least one match occurred.")
             self._set_bulb_state("success")
         else:
@@ -269,13 +326,12 @@ class MatchingGameApp:
             for k in range(1, 7):
                 if random.randint(1, 6) == k:
                     matches += 1
-            self._record_result(matches)
             if matches > 0:
                 successes += 1
+            self._apply_trial_outcome(matches, update_graph=False)
 
-        self.total_trials += n
-        self.total_successes += successes
         self._update_stats()
+        self._draw_graph()
         self.status_var.set(f"Simulated {n} trials. Successes: {successes}.")
         if successes > 0:
             self._set_bulb_state("success")
@@ -298,6 +354,17 @@ class MatchingGameApp:
         if len(self.recent_results) > self.hist_window:
             self.recent_results = self.recent_results[-self.hist_window:]
         # self._draw_histogram()
+
+    def _apply_trial_outcome(self, matches, update_graph=True):
+        success = matches > 0
+        self._record_result(matches)
+        self.total_trials += 1
+        if success:
+            self.total_successes += 1
+        rate = self.total_successes / self.total_trials if self.total_trials else 0.0
+        self.rate_history.append(rate)
+        if update_graph:
+            self._draw_graph()
 
 
 def main():
