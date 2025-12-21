@@ -37,6 +37,18 @@ class MatchingGameApp:
 
         self.sim_btn = ttk.Button(controls, text="Simulate", command=self.run_batch)
         self.sim_btn.grid(row=0, column=3)
+
+        self.show_ref_var = tk.BooleanVar(value=False)
+        self.ref_line_btn = ttk.Checkbutton(
+            controls,
+            text="Show reference",
+            variable=self.show_ref_var,
+            command=self._draw_graph,
+        )
+        self.ref_line_btn.grid(row=0, column=4, padx=(12, 0))
+
+        self.clear_btn = ttk.Button(controls, text="Clear", command=self.clear_simulations)
+        self.clear_btn.grid(row=0, column=5, padx=(12, 0))
         """
         self.auto_btn = ttk.Button(controls, text="Start Auto", command=self.toggle_auto)
         self.auto_btn.grid(row=0, column=4, padx=(12, 8))
@@ -136,6 +148,7 @@ class MatchingGameApp:
         x0, y0, x1, y1 = self.graph_rect
         axis_color = "#6f5f4f"
         line_color = "#0093e6"
+        ref_color = "#3b2e1f"
 
         self.graph_canvas.create_line(x0, y0, x0, y1, fill=axis_color, width=2, tags="graph")
         self.graph_canvas.create_line(x0, y1, x1, y1, fill=axis_color, width=2, tags="graph")
@@ -148,6 +161,11 @@ class MatchingGameApp:
             y = y1 - ((value - y_min) / (y_max - y_min)) * (y1 - y0)
             self.graph_canvas.create_line(x0 - 6, y, x0, y, fill=axis_color, width=1, tags="graph")
             self.graph_canvas.create_text(x0 - 26, y, text=f"{value:.1f}", font=("Georgia", 9), fill=axis_color, tags="graph")
+
+        if self.show_ref_var.get():
+            ref_rate = 1 - (5 / 6) ** 6
+            y = y1 - ((ref_rate - y_min) / (y_max - y_min)) * (y1 - y0)
+            self.graph_canvas.create_line(x0, y, x1, y, fill=ref_color, width=1, tags="graph")
 
         n = len(self.rate_history)
         if n <= 1:
@@ -365,6 +383,17 @@ class MatchingGameApp:
         self.rate_history.append(rate)
         if update_graph:
             self._draw_graph()
+
+    def clear_simulations(self):
+        self.total_trials = 0
+        self.total_successes = 0
+        self.rate_history = []
+        self.recent_results = []
+        self._update_stats()
+        self._draw_graph()
+        self.status_var.set("Cleared all simulations.")
+        self._set_bulb_state("neutral")
+        self._refresh_dice()
 
 
 def main():
