@@ -7,8 +7,8 @@ Build steps (on your dev machine)
    build_exe.bat
 
 Output
-- The executable will be created at dist\MatchingGame.exe.
-- Copy dist\MatchingGame.exe to the classroom PC and run it directly.
+- The executables will be created at dist\MatchingGame.exe and dist\CoinFlipGame.exe.
+- Copy the .exe files to the classroom PC and run them directly.
 
 Notes
 - The build must be done on Windows to produce a Windows .exe.

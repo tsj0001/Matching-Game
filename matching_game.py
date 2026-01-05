@@ -75,13 +75,14 @@ class MatchingGameApp:
         self.success_var = tk.StringVar(value="Successes: 0")
         self.rate_var = tk.StringVar(value="Success rate: 0.000")
         self.theory_var = tk.StringVar(
-            value=f"Theoretical: {1 - (5 / 6) ** 6:.3f}"
+            value="Theoretical: ???"
+            #value=f"Theoretical: {1 - (5 / 6) ** 6:.3f}"
         )
 
-        ttk.Label(stats, textvariable=self.trials_var, font=("Georgia", 11)).grid(row=0, column=0, sticky="e")
-        ttk.Label(stats, textvariable=self.success_var, font=("Georgia", 11)).grid(row=1, column=0, sticky="e")
-        ttk.Label(stats, textvariable=self.rate_var, font=("Georgia", 11)).grid(row=2, column=0, sticky="e")
-        ttk.Label(stats, textvariable=self.theory_var, font=("Georgia", 11)).grid(row=3, column=0, sticky="e")
+        ttk.Label(stats, textvariable=self.trials_var, font=("Georgia", 16)).grid(row=0, column=0, sticky="e")
+        ttk.Label(stats, textvariable=self.success_var, font=("Georgia", 16)).grid(row=1, column=0, sticky="e")
+        ttk.Label(stats, textvariable=self.rate_var, font=("Georgia", 16)).grid(row=2, column=0, sticky="e")
+        ttk.Label(stats, textvariable=self.theory_var, font=("Georgia", 16)).grid(row=3, column=0, sticky="e")
 
         self.graph_canvas = tk.Canvas(self.main, width=920, height=170, bg="#f6f2ea", highlightthickness=0)
         self.graph_canvas.grid(row=3, column=0, columnspan=3, sticky="nsew", pady=(16, 0))
